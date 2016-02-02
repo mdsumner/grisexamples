@@ -32,6 +32,7 @@ pp <- c_poly(list(p, m))
 
 ## something like this
 
+
 gg <- gris(pp)
 gt <- gris:::triangulate(gg)
 
@@ -45,7 +46,10 @@ g2$tXv <- data_frame(.vx1 = g2$bXv$.vx0[seq(1, nrow(g2$bXv), by = 3)],
 
 centroids <- gris:::tricentroids(g2)
 
-centroids$tri <- pointInTriangle(g2, centroids %>% dplyr::select(x, y) %>% as.matrix)
+#mLink <- over(SpatialPoints(centroids %>% dplyr::select(x, y) %>% as.matrix, proj4string = CRS(projection(m))), m)
+mLink <- which(!is.na(extract(as(m, "SpatialPolygons"), centroids %>% dplyr::select(x, y) %>% as.matrix)$poly.ID))
+pLink <- which(!is.na(extract(as(p, "SpatialPolygons"), centroids %>% dplyr::select(x, y) %>% as.matrix)$poly.ID))
+#centroids$tri <- pointInTriangle(g2, centroids %>% dplyr::select(x, y) %>% as.matrix)
 
 
 # normverts3 <- function(x) {

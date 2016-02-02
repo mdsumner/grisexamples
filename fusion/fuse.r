@@ -33,8 +33,44 @@ pp <- c_poly(list(p, m))
 ## something like this
 
 gg <- gris(pp)
-gt <- triangulate(gg)
+gt <- gris:::triangulate(gg)
 
+gtt <- RTriangle::triangulate(mkpslg(gg))
+g2 <- gris:::as.gris.triangulation(gtt, type = "mesh")
+g2$oXt <- g2$b %>% transmute(.tr0 = .br0, .ob0 = .ob0)
+g2$tXv <- data_frame(.vx1 = g2$bXv$.vx0[seq(1, nrow(g2$bXv), by = 3)], 
+                     .vx2 = g2$bXv$.vx0[seq(2, nrow(g2$bXv), by = 3)], 
+                     .vx3 = g2$bXv$.vx0[seq(3, nrow(g2$bXv), by = 3)], 
+                     .tr0 = g2$oXt$.tr0)
+
+centroids <- gris:::tricentroids(g2)
+
+centroids$tri <- pointInTriangle(g2, centroids %>% dplyr::select(x, y) %>% as.matrix)
+
+
+# normverts3 <- function(x) {
+#   v <-  x$v %>% mutate(newID = as.integer(factor(paste(x, y, sep = ";"))))
+# }
+# 
+# mktripslg <- function(x) {
+#   v <- x$v %>% distinct(.vx0) %>% mutate(structuralIndex = row_number())
+#   P <- v %>% dplyr::select(x, y) %>% as.matrix
+#   tXv <- x$tXv
+#   ind <- rbind(tXv %>% dplyr::select(.vx1, .vx2) %>% as.matrix, 
+#                tXv %>% dplyr::select(.vx2, .vx3) %>% as.matrix, 
+#                tXv %>% dplyr::select(.vx3, .vx1) %>% as.matrix)
+#   ind[] <- v$structuralIndex[match(ind, v$.vx0)]
+#   RTriangle::pslg(P = P, S = ind)
+# }
+
+
+
+
+tps <- mktripslg(gt)
+
+tritip <- RTriangle::triangulate(tps)
+
+gris:::tricentroids()
 
 
  pts <-  structure(c(114.005980431693, 114.53341808864, -12.6058410644529, 

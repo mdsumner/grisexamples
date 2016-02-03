@@ -21,8 +21,13 @@ data(wrld_simpl)
 library(raster)
 library(gris)
 library(dplyr)
-map1 <- subset(wrld_simpl, NAME == "Australia", select = "NAME")
-ras <- raster(map1, nrow = 15, ncol = 25)
+library(rworldxtra)
+data(countriesHigh)
+map1 <- subset(countriesHigh, SOVEREIGNT == "Australia")
+map1$NAME <- map1$SOVEREIGNT
+map1 <- map1["NAME"]
+#map1 <- subset(wrld_simpl, NAME == "Australia", select = "NAME")
+ras <- raster(map1, nrow = 150, ncol = 250)
 #ras <- raster(map1, nrow = 65, ncol = 85)
 pgrid <- disaggregate(as(ras, "SpatialPolygonsDataFrame"))
 pgrid$NAME <- sprintf(sprintf("g%%0%ii", ceiling(log10(ncell(ras) + 1))),  seq(ncell(ras)))
@@ -43,16 +48,16 @@ pmesh$tXv <- with(pmesh, data_frame(.vx1 = bXv$.vx0[seq(1, nrow(bXv), by = 3)],
 
 centroids <- gris:::tricentroids(pmesh)
 
-#mLink <- over(SpatialPoints(centroids %>% dplyr::select(x, y) %>% as.matrix, proj4string = CRS(projection(m))), m)
-mLink <-extract(as(map1, "SpatialPolygons"), centroids %>% dplyr::select(x, y) %>% as.matrix)$poly.ID
-pLink <- extract(as(pbind, "SpatialPolygons"), centroids %>% dplyr::select(x, y) %>% as.matrix)$poly.ID
-str(mLink)
-str(pLink)
 
-pmesh$o$name <- c("gr", "oz")[is.na(mLink) + 1]
-topo <- raster("E:\\DATA\\Etopo\\Etopo1Ice\\Etopo1.tif")
-pmesh$v$z <- extract(topo, pmesh$v %>% select(x, y) %>% as.matrix) * 25
-gris:::plot3d.gris(pmesh, verts = c("x", "y", "z"), objname = "name")
+ mLink <-extract(as(map1, "SpatialPolygons"), centroids %>% dplyr::select(x, y) %>% as.matrix)$poly.ID
+# # pLink <- extract(as(pbind, "SpatialPolygons"), centroids %>% dplyr::select(x, y) %>% as.matrix)$poly.ID
+# # str(mLink)
+# # str(pLink)
+# 
+ pmesh$o$name <- c("gr", "oz")[is.na(mLink) + 1]
+ topo <- raster("E:\\DATA\\Etopo\\Etopo1Ice\\Etopo1.tif")
+ pmesh$v$z <- extract(topo, pmesh$v %>% select(x, y) %>% as.matrix) * 25
+# gris:::plot3d.gris(pmesh, verts = c("x", "y", "z"), objname = "name")
 
 
 library(dismo)
@@ -66,4 +71,7 @@ writeGDAL(img, texfile, drivername = "PNG", type = "Byte", mvFlag = 0)
 texcoords <- xyFromCell(setExtent(gm, extent(0, 1, 0, 1)), cellFromXY(gm, project(pmesh$v %>% select(x, y) %>% as.matrix(), projection(img))))
 texcoords[texcoords > 1 | texcoords < 0] <- NA_real_
 
-texmesh <- gris:::grisTri2rgl(pmesh, globe = TRUE, verts = c("X", "y", "z"))
+texmesh <- gris:::grisTri2rgl(pmesh, globe = TRUE, verts = c("x", "y", "z"))
+library(rgl)
+texmesh$material <- list()
+shade3d(texmesh, col = "white", texcoords = texcoords[texmesh$it, ], texture = texfile)

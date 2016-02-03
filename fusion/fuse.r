@@ -22,8 +22,8 @@ library(raster)
 library(gris)
 library(dplyr)
 map1 <- subset(wrld_simpl, NAME == "Australia", select = "NAME")
-#ras <- raster(map1, nrow = 15, ncol = 25)
-ras <- raster(map1, nrow = 65, ncol = 85)
+ras <- raster(map1, nrow = 15, ncol = 25)
+#ras <- raster(map1, nrow = 65, ncol = 85)
 pgrid <- disaggregate(as(ras, "SpatialPolygonsDataFrame"))
 pgrid$NAME <- sprintf(sprintf("g%%0%ii", ceiling(log10(ncell(ras) + 1))),  seq(ncell(ras)))
 pgrid$layer <- NULL
@@ -55,3 +55,15 @@ pmesh$v$z <- extract(topo, pmesh$v %>% select(x, y) %>% as.matrix) * 25
 gris:::plot3d.gris(pmesh, verts = c("x", "y", "z"), objname = "name")
 
 
+library(dismo)
+gm <- gmap(map1, scale = 2, type = "satellite")
+
+img <- as(gris:::rasterPal2RGB(readAll(gm)), "SpatialGridDataFrame")
+texfile <- sprintf("%s.png", tempfile())
+
+writeGDAL(img, texfile, drivername = "PNG", type = "Byte", mvFlag = 0)
+
+texcoords <- xyFromCell(setExtent(gm, extent(0, 1, 0, 1)), cellFromXY(gm, project(pmesh$v %>% select(x, y) %>% as.matrix(), projection(img))))
+texcoords[texcoords > 1 | texcoords < 0] <- NA_real_
+
+texmesh <- gris:::grisTri2rgl(pmesh, globe = TRUE, verts = c("X", "y", "z"))
